@@ -10,22 +10,59 @@
 
 <div class="container">
   <h2>Diagnóstico Médico Simulado</h2>
-  <p>Sistema de decisão baseado em regras (Majority, OneR, PRISM)</p>
+  <p>Sistema de decisão baseado em regras (Majority, OneR, PRISM). Preencha os dados do paciente:</p>
 
   <form id="form">
     <div class="row">
-      <input placeholder="Glucose (ex: 145)" id="Glucose" required>
-      <input placeholder="BMI (ex: 32)" id="BMI" required>
-      <input placeholder="Age (ex: 52)" id="Age" required>
+      <div class="field">
+        <label>Gravidez (nº)</label>
+        <input type="number" min="0" step="1" id="Pregnancies" placeholder="ex: 3" value="3">
+      </div>
+      <div class="field">
+        <label>Glicose (mg/dL)</label>
+        <input type="number" min="1" step="1" id="Glucose" placeholder="ex: 117" value="117" required>
+      </div>
+      <div class="field">
+        <label>Pressão Arterial (mm Hg)</label>
+        <input type="number" min="1" step="1" id="BloodPressure" placeholder="ex: 72" value="72">
+      </div>
     </div>
 
-    <select id="model">
-      <option value="majority">Majority (baseline)</option>
-      <option value="oner">OneR (regra única)</option>
-      <option value="prism">PRISM (regras combinadas)</option>
-    </select>
+    <div class="row">
+      <div class="field">
+        <label>Espessura da Pele (mm)</label>
+        <input type="number" min="1" step="1" id="SkinThickness" placeholder="ex: 29" value="29">
+      </div>
+      <div class="field">
+        <label>Insulina (µU/mL)</label>
+        <input type="number" min="1" step="1" id="Insulin" placeholder="ex: 125" value="125">
+      </div>
+      <div class="field">
+        <label>IMC (kg/m²)</label>
+        <input type="number" min="1" step="0.1" id="BMI" placeholder="ex: 32" value="32" required>
+      </div>
+    </div>
 
-    <button>Executar diagnóstico</button>
+    <div class="row">
+      <div class="field">
+        <label>Função Pedigree Diabetes</label>
+        <input type="number" min="0.01" step="0.01" id="DiabetesPedigreeFunction" placeholder="ex: 0.37" value="0.37">
+      </div>
+      <div class="field">
+        <label>Idade (anos)</label>
+        <input type="number" min="1" step="1" id="Age" placeholder="ex: 29" value="29" required>
+      </div>
+      <div class="field">
+        <label>Modelo</label>
+        <select id="model">
+          <option value="majority">Majority (baseline)</option>
+          <option value="oner">OneR (regra única)</option>
+          <option value="prism" selected>PRISM (regras combinadas)</option>
+        </select>
+      </div>
+    </div>
+
+    <button type="submit">Executar diagnóstico</button>
   </form>
 
   <div class="alert" id="result" style="display:none;"></div>
@@ -34,18 +71,21 @@
 <script>
 document.getElementById("form").onsubmit = async (e) => {
   e.preventDefault();
-  const model = document.getElementById("model").value;
+
+  const get = (id) => parseFloat(document.getElementById(id).value);
 
   const payload = {
-    Pregnancies: 0,
-    Glucose: Number(document.getElementById("Glucose").value),
-    BloodPressure: 70,
-    SkinThickness: 20,
-    Insulin: 80,
-    BMI: Number(document.getElementById("BMI").value),
-    DiabetesPedigreeFunction: 0.5,
-    Age: Number(document.getElementById("Age").value)
+    Pregnancies: get("Pregnancies"),
+    Glucose: get("Glucose"),
+    BloodPressure: get("BloodPressure"),
+    SkinThickness: get("SkinThickness"),
+    Insulin: get("Insulin"),
+    BMI: get("BMI"),
+    DiabetesPedigreeFunction: get("DiabetesPedigreeFunction"),
+    Age: get("Age")
   };
+
+  const model = document.getElementById("model").value;
 
   const res = await fetch(`/predict/${model}`, {
     method: "POST",
@@ -54,10 +94,14 @@ document.getElementById("form").onsubmit = async (e) => {
   });
 
   const data = await res.json();
+  const resultEl = document.getElementById("result");
+  const positive = data.prediction === 1;
 
-  document.getElementById("result").style.display = "block";
-  document.getElementById("result").innerHTML =
-    `<strong>Resultado:</strong> ${data.prediction == 1 ? "DIABETES (simulado)" : "Sem diabetes (simulado)"}<br>
+  resultEl.style.display = "block";
+  resultEl.style.background = positive ? "#fff3cd" : "#d1e7dd";
+  resultEl.style.color = positive ? "#664d03" : "#0a3622";
+  resultEl.innerHTML =
+    `<strong>Resultado:</strong> ${positive ? "⚠ DIABETES (simulado)" : "✓ Sem diabetes (simulado)"}<br>
      <strong>Regra aplicada:</strong> ${data.rule}`;
 };
 </script>

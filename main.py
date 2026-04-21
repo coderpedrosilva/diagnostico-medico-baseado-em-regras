@@ -21,7 +21,7 @@ oner.fit(X_train, y_train)
 oner_preds = oner.predict(X_test)
 
 print("OneR using:", oner.best_feature)
-print("OneR predictions:", oner_preds.head(10).values)
+print("OneR predictions:", oner_preds[:10])
 
 # PRISM
 prism = Prism()
