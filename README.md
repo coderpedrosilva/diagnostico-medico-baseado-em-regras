@@ -11,9 +11,20 @@ Este projeto NÃO é um sistema médico real. Ele foi desenvolvido exclusivament
 Este sistema utiliza a base pública:
 [**Pima Indians Diabetes Database**](https://www.kaggle.com/datasets/uciml/pima-indians-diabetes-database)
 
-A base contém dados reais de pacientes (glicose, IMC, idade, pressão, histórico familiar, etc.) e o diagnóstico verdadeiro (Outcome).
+A base contém dados reais de pacientes e o diagnóstico verdadeiro (Outcome), com 8 atributos clínicos:
 
-Esses dados são usados apenas para treinamento do motor de regras.
+| Atributo | Descrição |
+|---|---|
+| Pregnancies | Número de gestações |
+| Glucose | Concentração de glicose (mg/dL) |
+| BloodPressure | Pressão arterial diastólica (mmHg) |
+| SkinThickness | Espessura da dobra cutânea do tríceps (mm) |
+| Insulin | Insulina sérica em 2h (µU/mL) |
+| BMI | Índice de Massa Corporal (kg/m²) |
+| DiabetesPedigreeFunction | Função de pedigree de diabetes (histórico familiar) |
+| Age | Idade (anos) |
+
+> **Tratamento de dados ausentes:** zeros nos atributos clínicos (Glucose, BloodPressure, SkinThickness, Insulin, BMI) são clinicamente impossíveis e representam dados ausentes. O sistema os substitui pela mediana antes do treinamento.
 
 ---
 
@@ -43,8 +54,10 @@ Serve para demonstrar que uma boa acurácia pode esconder um modelo completament
 
 Algoritmo que testa cada atributo separadamente e escolhe aquele que gera a melhor regra única.
 
+Os atributos contínuos são discretizados em 5 faixas (quantis). Para valores fora do intervalo de treinamento, o sistema aplica clipping automático — evitando erros silenciosos de predição.
+
 Exemplo de regra aprendida:
-> “SE Glucose > 140 → diabetes = 1”
+> "SE Glucose está na faixa mais alta → diabetes = 1"
 
 Mostra como uma única variável pode ser altamente informativa.
 
@@ -52,104 +65,99 @@ Mostra como uma única variável pode ser altamente informativa.
 
 ### PRISM
 
-Algoritmo de indução de múltiplas regras combinadas.
+Algoritmo de indução de múltiplas regras baseado em probabilidade condicional.
 
-Ele constrói regras do tipo:
-> SE Glucose > 150 E BMI > 30 E Age > 50 → diabetes = 1
+Para evitar sobreajuste, o sistema aplica:
+- **Discretização interna** de atributos contínuos em bins quantílicos
+- **Suporte mínimo** (`min_support=0.03`): regras que cobrem menos de 3% das amostras são descartadas
 
-Isso cria um sistema especialista real, totalmente explicável, auditável e humano-legível.
+Isso reduziu o conjunto de regras de mais de 380 para **10 regras significativas**, todas com confiança explícita.
+
+Exemplo de regra gerada:
+> `REGRA 6: SE Glucose == 4 ENTÃO diabetes (confiança: 75.70%)`
+
+A predição seleciona a regra de maior confiança para cada paciente. Casos sem cobertura recebem a classe majoritária como padrão.
 
 ---
 
-## 🧪 Como acontece o treinamento de Machine Learning
+## 📈 Métricas de Avaliação
 
-O treinamento do sistema ocorre automaticamente no momento em que a API é iniciada.
+Resultados no conjunto de teste (30% dos dados, random_state=42):
 
-Ao executar o servidor, o sistema carrega o arquivo `diabetes.csv` contendo dados reais de pacientes e inicia o processo de aprendizado das regras.
+| Modelo | Accuracy | Precision | Recall | F1 Score |
+|---|---|---|---|---|
+| Majority | 65.4% | 0.0% | 0.0% | 0.0% |
+| OneR | **72.7%** | 64.9% | 46.2% | 54.0% |
+| PRISM | **72.7%** | 64.9% | 46.2% | 54.0% |
 
-Cada modelo passa por um processo diferente de aprendizado:
+> O Majority Classifier demonstra o paradoxo da acurácia: 65% de acerto sem aprender absolutamente nada, apenas predizendo a classe majoritária.
+
+---
+
+## 🧪 Como acontece o treinamento
+
+O treinamento ocorre automaticamente no startup da API.
 
 ### Majority Classifier
 
-O sistema analisa toda a base e identifica qual classe (com ou sem diabetes) aparece com maior frequência.
-
-Essa classe é armazenada como a resposta padrão do modelo, funcionando como baseline estatístico.
+O sistema analisa toda a base e identifica qual classe aparece com maior frequência. Essa classe é armazenada como resposta padrão.
 
 ### OneR
 
-O algoritmo OneR avalia cada atributo individualmente (como glicose, IMC, idade, etc.) e cria faixas (intervalos) para cada um.
-
-Em seguida, ele calcula, para cada faixa, qual classe ocorre com maior frequência.
-
-O atributo que gera o menor erro global é selecionado como regra principal do sistema.
-
-O resultado é uma única regra estatística aprendida automaticamente a partir dos dados.
+O algoritmo avalia cada atributo individualmente, cria faixas por quantis e calcula qual classe domina cada faixa. O atributo com menor erro global vira a regra principal.
 
 ### PRISM
 
-O PRISM executa um processo iterativo de indução de regras combinadas.
+O PRISM executa indução iterativa por classe: para cada classe-alvo, busca a condição atributo-valor que maximiza `P(classe | atributo=valor)`. A cada iteração, uma nova regra é criada e os exemplos cobertos são removidos do subconjunto. O processo encerra quando não há mais exemplos ou nenhuma condição atende o suporte mínimo.
 
-Ele busca combinações de condições que maximizam a probabilidade de uma determinada classe.
-
-A cada iteração, uma nova regra do tipo:
-> SE condição1 E condição2 E condição3 → classe
-é criada e armazenada.
-
-Esse processo se repete até que o sistema construa um conjunto completo de regras especialistas.
-
-Todas as regras aprendidas permanecem carregadas em memória e passam a compor o motor de inferência da aplicação.
-
-A partir desse ponto, o sistema não realiza mais aprendizado, apenas executa inferência por regras em tempo real.
+Todas as regras aprendidas são exportadas automaticamente para `reports/rules.txt` — o **manual humano de decisão da IA**.
 
 ---
 
 ## ⚙️ Engenharia do Sistema
 
-1. A API carrega o CSV e treina os modelos apenas uma vez no startup.
+1. A API carrega o CSV, imputa dados ausentes e treina os modelos apenas uma vez no startup.
 2. As regras aprendidas ficam em memória.
-3. Cada requisição executa apenas inferência por regras (lookup), garantindo respostas instantâneas.
+3. Cada requisição executa apenas inferência (lookup), garantindo respostas instantâneas.
+4. Valores fora do intervalo de treinamento são tratados com segurança (clipping no OneR, bins com extremos ±∞ no PRISM).
 
-O PRISM exporta automaticamente as regras aprendidas para:  
-`reports/rules.txt`  
+---
 
-Esse arquivo é o **manual humano de decisão da IA**.  
+## 🖥 Interface Web
 
----  
+O sistema possui interface web interativa com todos os 8 campos clínicos expostos ao usuário.
 
-## 🖥 Interface Web  
+O usuário preenche os dados do paciente, escolhe o modelo (Majority, OneR ou PRISM) e executa o diagnóstico simulado. O resultado é exibido com destaque visual colorido e a regra aplicada.
 
-O sistema possui uma interface web interativa construída em HTML + CSS autoral (estilo Bootstrap-like).  
+### Exemplos de uso
 
-O usuário informa:  
-- Glucose  
-- BMI  
-- Age  
+### 🔹 Majority – Baseline
+![Majority](assets/majority.png)
 
-Escolhe o modelo (Majority, OneR ou PRISM) e executa o diagnóstico simulado.  
+### 🔹 OneR – Regra Única
+![OneR](assets/oner.png)
 
-### Exemplos de uso (prints)  
+### 🔹 PRISM – Regras Combinadas
+![PRISM](assets/prism.png)
 
-### 🔹 Majority – Baseline  
-![Majority](assets/majority.png)  
+---
 
-### 🔹 OneR – Regra Única  
-![OneR](assets/oner.png)  
+## ▶️ Como Executar
 
-### 🔹 PRISM – Regras Combinadas  
-![PRISM](assets/prism.png)  
+Instale dependências:
+```
+pip install fastapi uvicorn pandas scikit-learn
+```
 
----  
+Inicie a aplicação:
+```
+uvicorn api.app:app --reload
+```
 
-## ▶️ Como Executar  
-
-Instale dependências:  
-`pip install fastapi uvicorn pandas scikit-learn`  
-
-Inicie a aplicação:  
-`uvicorn api.app:app --reload`  
-
-Abra no navegador:  
-`http://127.0.0.1:8000/ui/`  
+Abra no navegador:
+```
+http://127.0.0.1:8000/ui/
+```
 
 ---
 
@@ -159,10 +167,11 @@ Este projeto é exclusivamente educacional.
 Não deve ser utilizado para diagnósticos médicos reais.
 
 Ele demonstra conceitos de:
-- Explainable AI
+- Explainable AI (XAI)
 - Sistemas Especialistas
 - Rule Learning
 - Engenharia de Inferência
+- Tratamento de dados ausentes
 
 ---
 
@@ -172,8 +181,10 @@ Este projeto demonstra na prática como:
 
 • regras podem ser aprendidas automaticamente a partir de dados reais
 
-• sistemas especialistas explicáveis podem ser construídos
+• sistemas especialistas explicáveis podem ser construídos sem redes neurais
 
-• motores de decisão humanos podem ser servidos via API
+• motores de decisão humanos podem ser servidos via API com latência mínima
+
+• overfitting em algoritmos simbólicos pode ser controlado com discretização e suporte mínimo
 
 Transformando dados em regras, e regras em decisões explicáveis.
