@@ -2,70 +2,72 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Medical Rule-Based Diagnosis</title>
+  <title>Diagnóstico Médico Simulado</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
-  <h2>Diagnóstico Médico Simulado</h2>
-  <p>Sistema de decisão baseado em regras (Majority, OneR, PRISM). Preencha os dados do paciente:</p>
+  <div class="header">
+    <h2>Diagnóstico Médico Simulado</h2>
+    <p>Sistema de decisão baseado em regras (Majority, OneR, PRISM). Preencha os dados do paciente.</p>
+  </div>
 
   <form id="form">
-    <div class="row">
-      <div class="field">
-        <label>Gravidez (nº)</label>
-        <input type="number" min="0" step="1" id="Pregnancies" placeholder="ex: 3" value="3">
-      </div>
+
+    <div class="section-label">Dados clínicos</div>
+    <div class="grid">
       <div class="field">
         <label>Glicose (mg/dL)</label>
-        <input type="number" min="1" step="1" id="Glucose" placeholder="ex: 117" value="117" required>
-      </div>
-      <div class="field">
-        <label>Pressão Arterial (mm Hg)</label>
-        <input type="number" min="1" step="1" id="BloodPressure" placeholder="ex: 72" value="72">
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="field">
-        <label>Espessura da Pele (mm)</label>
-        <input type="number" min="1" step="1" id="SkinThickness" placeholder="ex: 29" value="29">
+        <input type="number" min="1" step="1" id="Glucose" placeholder="117" value="117" required>
       </div>
       <div class="field">
         <label>Insulina (µU/mL)</label>
-        <input type="number" min="1" step="1" id="Insulin" placeholder="ex: 125" value="125">
+        <input type="number" min="1" step="1" id="Insulin" placeholder="125" value="125">
+      </div>
+      <div class="field">
+        <label>Pressão Arterial (mmHg)</label>
+        <input type="number" min="1" step="1" id="BloodPressure" placeholder="72" value="72">
       </div>
       <div class="field">
         <label>IMC (kg/m²)</label>
-        <input type="number" min="1" step="0.1" id="BMI" placeholder="ex: 32" value="32" required>
+        <input type="number" min="1" step="0.1" id="BMI" placeholder="32" value="32" required>
+      </div>
+      <div class="field">
+        <label>Espessura da Pele (mm)</label>
+        <input type="number" min="1" step="1" id="SkinThickness" placeholder="29" value="29">
+      </div>
+      <div class="field">
+        <label>Pedigree Diabetes</label>
+        <input type="number" min="0.01" step="0.01" id="DiabetesPedigreeFunction" placeholder="0.37" value="0.37">
       </div>
     </div>
 
-    <div class="row">
-      <div class="field">
-        <label>Função Pedigree Diabetes</label>
-        <input type="number" min="0.01" step="0.01" id="DiabetesPedigreeFunction" placeholder="ex: 0.37" value="0.37">
-      </div>
+    <div class="section-label">Perfil do paciente</div>
+    <div class="grid">
       <div class="field">
         <label>Idade (anos)</label>
-        <input type="number" min="1" step="1" id="Age" placeholder="ex: 29" value="29" required>
+        <input type="number" min="1" step="1" id="Age" placeholder="29" value="29" required>
+      </div>
+      <div class="field">
+        <label>Gestações (nº)</label>
+        <input type="number" min="0" step="1" id="Pregnancies" placeholder="3" value="3">
       </div>
       <div class="field">
         <label>Modelo</label>
         <select id="model">
-          <option value="majority">Majority (baseline)</option>
-          <option value="oner">OneR (regra única)</option>
-          <option value="prism" selected>PRISM (regras combinadas)</option>
+          <option value="majority">Majority</option>
+          <option value="oner">OneR</option>
+          <option value="prism" selected>PRISM</option>
         </select>
       </div>
     </div>
 
-    <button type="submit">Executar diagnóstico</button>
+    <button type="submit" class="btn-submit">Executar diagnóstico</button>
   </form>
 
-  <div class="alert" id="result" style="display:none;"></div>
+  <div class="result-box" id="result"></div>
 </div>
 
 <script>
@@ -98,11 +100,11 @@ document.getElementById("form").onsubmit = async (e) => {
   const positive = data.prediction === 1;
 
   resultEl.style.display = "block";
-  resultEl.style.background = positive ? "#fff3cd" : "#d1e7dd";
-  resultEl.style.color = positive ? "#664d03" : "#0a3622";
-  resultEl.innerHTML =
-    `<strong>Resultado:</strong> ${positive ? "⚠ DIABETES (simulado)" : "✓ Sem diabetes (simulado)"}<br>
-     <strong>Regra aplicada:</strong> ${data.rule}`;
+  resultEl.className = "result-box " + (positive ? "positive" : "negative");
+  resultEl.innerHTML = `
+    <strong>${positive ? "⚠ Indicativo de diabetes" : "✓ Sem indicativo de diabetes"}</strong>
+    <span>Regra aplicada: ${data.rule}</span>
+  `;
 };
 </script>
 

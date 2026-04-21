@@ -1,56 +1,149 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 body {
-  background: #f4f6f9;
+  background: #f0f2f5;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-  color: #212529;
+  color: #1a1d23;
+  margin: 0;
+  padding: 40px 16px;
 }
 
 .container {
-  max-width: 720px;
-  margin: 80px auto;
-  background: #fff;
-  padding: 32px;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0,0,0,.08);
+  max-width: 680px;
+  margin: 0 auto;
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
 }
 
-h2 {
-  margin-bottom: 24px;
+.header {
+  margin-bottom: 32px;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 20px;
 }
 
-.row {
-  display: flex;
+.header h2 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #0d6efd;
+}
+
+.header p {
+  margin: 0;
+  font-size: 14px;
+  color: #6c757d;
+}
+
+/* Grade de campos */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 16px;
+  margin-bottom: 16px;
 }
 
-input, select, button {
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #495057;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.field input,
+.field select {
   width: 100%;
-  padding: 12px;
+  padding: 10px 12px;
+  border: 1px solid #dee2e6;
   border-radius: 8px;
-  border: 1px solid #ced4da;
-  font-size: 16px;
+  font-size: 15px;
+  color: #1a1d23;
+  background: #f8f9fa;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-input:focus, select:focus {
+.field input:focus,
+.field select:focus {
   outline: none;
   border-color: #0d6efd;
+  background: #fff;
 }
 
-button {
+/* Linha separadora entre grupos */
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #adb5bd;
+  margin: 24px 0 12px;
+}
+
+/* Botão */
+.btn-submit {
+  width: 100%;
+  padding: 13px;
+  margin-top: 24px;
   background: #0d6efd;
   color: #fff;
   border: none;
-  margin-top: 16px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
 }
 
-button:hover {
+.btn-submit:hover {
   background: #0b5ed7;
 }
 
-.alert {
+.btn-submit:active {
+  transform: scale(0.99);
+}
+
+/* Resultado */
+.result-box {
   margin-top: 24px;
-  padding: 16px;
-  border-radius: 8px;
-  background: #e7f1ff;
-  color: #084298;
+  padding: 18px 20px;
+  border-radius: 10px;
+  font-size: 15px;
+  line-height: 1.6;
+  display: none;
+  border-left: 4px solid transparent;
+}
+
+.result-box.positive {
+  display: block;
+  background: #fff3cd;
+  color: #664d03;
+  border-color: #ffc107;
+}
+
+.result-box.negative {
+  display: block;
+  background: #d1e7dd;
+  color: #0a3622;
+  border-color: #198754;
+}
+
+.result-box strong {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.result-box span {
+  font-size: 13px;
+  opacity: 0.85;
 }
