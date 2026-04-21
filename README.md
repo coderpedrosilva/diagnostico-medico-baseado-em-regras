@@ -132,13 +132,13 @@ O usuário preenche os dados do paciente, escolhe o modelo (Majority, OneR ou PR
 ### Exemplos de uso
 
 ### 🔹 Majority – Baseline
-![Majority](assets/majority.png)
+![Majority](assets/majority_v2.png)
 
 ### 🔹 OneR – Regra Única
-![OneR](assets/oner.png)
+![OneR](assets/oner_v2.png)
 
 ### 🔹 PRISM – Regras Combinadas
-![PRISM](assets/prism.png)
+![PRISM](assets/prism_v2.png)
 
 ---
 
